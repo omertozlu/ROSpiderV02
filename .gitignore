@@ -1,0 +1,19 @@
+# Push yapılırken yüklenmesini istemediğiniz dosyaların isimlerini aşşağıya denk gelen katgoriye ekleyiniz
+
+
+# ROS 2 build artifacts
+build/
+install/
+log/
+.colcon/
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# IDE settings
+.vscode/
+.idea/
+
+# OS junk
+.DS_Store
