@@ -1,0 +1,22 @@
+/**:
+  ros__parameters:
+    # "start" butonu (Ayağa kalkma)
+    STANDUP_BUTTON: 3
+
+    # "select" butonu (Oturma)
+    SITDOWN_BUTTON: 0
+
+    # "L2" butonu (Gövde rotasyon modu)
+    BODY_ROTATION_BUTTON: 8
+
+    # Sol joystick (İleri/Geri)
+    FORWARD_BACKWARD_AXES: 1
+
+    # Sol joystick (Sağ/Sol yana gitme)
+    LEFT_RIGHT_AXES: 0
+
+    # Sağ joystick (Kendi ekseninde dönme - Yaw)
+    YAW_ROTATION_AXES: 2
+
+    # Sağ joystick (Yukarı/Aşağı bakma - Pitch)
+    PITCH_ROTATION_AXES: 3

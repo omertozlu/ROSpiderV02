@@ -1,0 +1,77 @@
+from launch import LaunchDescription
+from launch_ros.actions import Node, PushRosNamespace
+from launch.actions import GroupAction
+
+def generate_launch_description():
+    # 1. Derinlik görüntüsünü Lazer verisine dönüştüren düğüm
+    depth_to_scan = Node(
+        package='depthimage_to_laserscan',
+        executable='depthimage_to_laserscan_node',
+        name='depthimage_to_laserscan',
+        parameters=[{
+            'scan_height': 10,
+            'output_frame': 'body_link' # Eski 'output_frame_id'
+        }],
+        remappings=[
+            ('image', '/camera/depth_registered/image_raw'),
+            ('scan', '/scan')
+        ]
+    )
+
+    # 2. RTAB-Map Grubu
+    rtabmap_group = GroupAction([
+        PushRosNamespace('rtabmap'),
+        
+        # RGB ve Depth verilerini senkronize eden düğüm (Eski data_odom_sync yerine)
+        Node(
+            package='rtabmap_sync',
+            executable='rgbd_sync',
+            name='rgbd_sync',
+            parameters=[{'approx_sync': True}],
+            remappings=[
+                ('rgb/image', '/camera/rgb/image_rect_color'),
+                ('depth/image', '/camera/depth_registered/image_raw'),
+                ('rgb/camera_info', '/camera/depth_registered/camera_info'),
+                ('rgbd_image', 'rgbd_image')
+            ]
+        ),
+
+        # Ana RTAB-Map Düğümü
+        Node(
+            package='rtabmap_slam',
+            executable='rtabmap',
+            name='rtabmap',
+            arguments=['--delete_db_on_start'],
+            parameters=[{
+                'frame_id': 'base_link',
+                'subscribe_depth': False, # rgbd_sync kullandığımız için False
+                'subscribe_rgbd': True,
+                'subscribe_scan': True,
+                'approx_sync': True,
+                'use_action_for_goal': True,
+                'queue_size': 30,
+                'publish_tf': True,
+                
+                # RTAB-Map Algoritma Parametreleri
+                'RGBD/OptimizeFromGraphEnd': 'true',
+                'Kp/MaxDepth': '4.0',
+                'Reg/Strategy': '1', # 1=ICP, 2=Visual, 0=Visual+ICP
+                'RGBD/AngularUpdate': '0.01',
+                'RGBD/LinearUpdate': '0.01',
+                'Mem/RehearsalSimilarity': '0.30',
+                'RGBD/NeighborLinkRefining': 'true',
+                'RGBD/ProximityBySpace': 'true'
+            }],
+            remappings=[
+                ('odom', '/odometry/calculated'),
+                ('scan', '/scan'),
+                ('rgbd_image', 'rgbd_image'),
+                ('goal_out', 'current_goal')
+            ]
+        )
+    ])
+
+    return LaunchDescription([
+        depth_to_scan,
+        rtabmap_group
+    ])

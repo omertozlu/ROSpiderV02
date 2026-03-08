@@ -1,0 +1,36 @@
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      # Çerçeve ve Zamanlama Ayarları
+      global_frame: odom
+      robot_base_frame: base_link
+      update_frequency: 5.0
+      publish_frequency: 2.0
+      transform_tolerance: 0.5
+      
+      # Yerel Pencere Ayarları
+      rolling_window: true
+      width: 3.0   # Metre cinsinden pencere genişliği
+      height: 3.0  # Metre cinsinden pencere yüksekliği
+      resolution: 0.05
+
+      # Plugin (Eklenti) Tanımları
+      plugins: ["obstacle_layer", "inflation_layer"]
+
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: True
+        observation_sources: laser
+        laser:
+          topic: /scan
+          data_type: "LaserScan"
+          clearing: True
+          marking: True
+          max_obstacle_height: 2.0
+          obstacle_max_range: 2.5
+          raytrace_max_range: 3.0
+
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.35  # Yerel manevra için daha dar tutulur

@@ -1,0 +1,22 @@
+/**:
+  ros__parameters:
+    # "start" button (Eski STANDUP_BUTTON)
+    STANDUP_BUTTON: 3
+
+    # "select" button (Eski SITDOWN_BUTTON)
+    SITDOWN_BUTTON: 0
+
+    # "L2" button
+    BODY_ROTATION_BUTTON: 8
+
+    # Sol joystick yukarı/aşağı
+    FORWARD_BACKWARD_AXES: 1
+
+    # Sol joystick sağ/sol
+    LEFT_RIGHT_AXES: 0
+
+    # Sağ joystick sağ/sol
+    YAW_ROTATION_AXES: 2
+
+    # Sağ joystick yukarı/aşağı
+    PITCH_ROTATION_AXES: 3

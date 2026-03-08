@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro"  name="hexapod_bot">
+
+    <xacro:include filename="common_properties.xacro" />
+    <xacro:include filename="inertial_macros.xacro" />
+    <xacro:include filename="leg.xacro" />
+    <xacro:include filename="gazebo_styles.xacro" />
+
+    <link name="base_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <mesh filename="package://hexapod_description/meshes/body.stl" scale="0.01 0.01 0.01"/>
+            </geometry>
+            <material name="grey"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${body_length} ${body_width} ${body_height}"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="3.0" x="${body_length}" y="${body_width}" z="${body_height}">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link>
+
+    <link name="base_footprint"/>
+    <joint name="base_joint" type="fixed">
+        <parent link="base_footprint"/>
+        <child link="base_link"/>
+        <origin xyz="0 0 ${body_height/2}" rpy="0 0 0"/> 
+    </joint>
+
+    <xacro:hexapod_leg suffix="right_front" parent="base_link" x_offset="${body_length/2}" y_offset="-${body_width/2}" yaw_offset="-0.785" mirror="1"/>
+    <xacro:hexapod_leg suffix="right_mid"   parent="base_link" x_offset="0"               y_offset="-${body_width/2}" yaw_offset="-1.5708" mirror="1"/>
+    <xacro:hexapod_leg suffix="right_back"  parent="base_link" x_offset="-${body_length/2}" y_offset="-${body_width/2}" yaw_offset="-2.356" mirror="1"/>
+    <xacro:hexapod_leg suffix="left_front"  parent="base_link" x_offset="${body_length/2}"  y_offset="${body_width/2}" yaw_offset="0.785" mirror="-1"/>
+    <xacro:hexapod_leg suffix="left_mid"    parent="base_link" x_offset="0"                y_offset="${body_width/2}" yaw_offset="1.5708" mirror="-1"/>
+    <xacro:hexapod_leg suffix="left_back"   parent="base_link" x_offset="-${body_length/2}" y_offset="${body_width/2}" yaw_offset="2.356" mirror="-1"/>
+
+    <ros2_control name="HexapodSystem" type="system">
+        <hardware>
+            <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+        </hardware>
+        <xacro:leg_ros2_control suffix="right_front"/>
+        <xacro:leg_ros2_control suffix="right_mid"/>
+        <xacro:leg_ros2_control suffix="right_back"/>
+        <xacro:leg_ros2_control suffix="left_front"/>
+        <xacro:leg_ros2_control suffix="left_mid"/>
+        <xacro:leg_ros2_control suffix="left_back"/>
+    </ros2_control>
+
+    <gazebo>
+        <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+            <parameters>$(find hexapod_controller)/config/controllers.yaml</parameters>
+        </plugin>
+    </gazebo>
+
+</robot>

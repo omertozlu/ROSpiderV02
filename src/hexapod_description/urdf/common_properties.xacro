@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <material name="grey"><color rgba="0.5 0.5 0.5 1"/></material>
+    <material name="black"><color rgba="0.1 0.1 0.1 1"/></material>
+
+    <xacro:property name="coxa_length"  value="0.012" /> 
+    <xacro:property name="femur_length" value="0.038" /> 
+    <xacro:property name="tibia_length" value="0.08" /> 
+
+    <xacro:property name="joint_lower_limit" value="-3.14"/><xacro:property name="joint_upper_limit" value="3.14"/>
+    <xacro:property name="joint_effort" value="6.0"/><xacro:property name="joint_velocity" value="0.524"/>
+    <xacro:property name="coxa_mass" value="0.05"/><xacro:property name="femur_mass" value="0.1"/><xacro:property name="tibia_mass" value="0.1"/>
+</robot>

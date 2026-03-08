@@ -1,0 +1,66 @@
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, Command
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    # 1. Paket yollarını al
+    bringup_dir = get_package_share_directory('hexapod_bringup')
+    description_dir = get_package_share_directory('hexapod_description')
+
+    # 2. Argümanları tanımla
+    config_arg = DeclareLaunchArgument(
+        'config', default_value='hexapod',
+        description='Robot konfigürasyon adı (YAML ve Xacro için)'
+    )
+    joy_mapping_arg = DeclareLaunchArgument(
+        'joy_mapping', default_value='joystick_ds4',
+        description='Joystick eşleştirme dosyası adı'
+    )
+
+    # 3. YAML Parametre Dosyalarının Yollarını Oluştur
+    # Not: ROS 2'de bu dosyalar artık ilgili düğümlere parametre olarak geçilecek
+    config_name = LaunchConfiguration('config')
+    joy_mapping_name = LaunchConfiguration('joy_mapping')
+    
+    # 4. Robot Description (Xacro) İşleme
+    # ROS 1'deki $(find xacro)/xacro komutunun ROS 2 karşılığı
+    robot_description_path = [
+        os.path.join(description_dir, 'urdf', ''), 
+        config_name, 
+        '_model.xacro'
+    ]
+    
+    # 5. Alt Launch Dosyalarını Dahil Et
+    
+    # JOY TELEOP
+    joy_teleop_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(bringup_dir, 'launch', 'components', 'joy_teleop.launch.py')
+        )
+    )
+
+    # LOCOMOTION
+    locomotion_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(bringup_dir, 'launch', 'components', 'locomotion.launch.py')
+        )
+    )
+
+    # RVIZ
+    rviz_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(bringup_dir, 'launch', 'rviz.launch.py')
+        )
+    )
+
+    return LaunchDescription([
+        config_arg,
+        joy_mapping_arg,
+        joy_teleop_launch,
+        locomotion_launch,
+        rviz_launch
+    ])

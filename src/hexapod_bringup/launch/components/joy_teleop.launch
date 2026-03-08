@@ -1,0 +1,44 @@
+from launch import LaunchDescription
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    # 1. Standart ROS 2 Joy Düğümü
+    # Joystick donanımından gelen verileri okur
+    joy_node = Node(
+        package='joy',
+        executable='joy_node',
+        name='ps4_joy',
+        parameters=[{
+            'dev': '/dev/input/js1',  # Joystick cihaz yolu
+            'deadzone': 0.12,         # Hassasiyet sınırı (float)
+        }],
+        respawn=True  # Bağlantı koparsa yeniden başlat
+    )
+
+    # 2. PS4 Sürücü Düğümü
+    # Not: Bu paket (ps4_ros) özel bir paketse Jazzy için derlenmiş olmalıdır.
+    ps4_node = Node(
+        package='ps4_ros',
+        executable='ps4_ros',
+        name='ps4',
+        output='screen',
+        parameters=[{
+            'scale_linear': 1.0,
+            'scale_angular': 0.5,
+            'pub_topic': '/searchbot/p3at/vel_cmd' # Hedef konu
+        }]
+    )
+
+    # 3. Hexapod Teleop Joystick (Beraber güncellediğimiz paket)
+    # Joystick verilerini bacak koordinatlarına çevirir
+    teleop_joystick_node = Node(
+        package='hexapod_teleop_joystick',
+        executable='hexapod_teleop_joystick',
+        name='Hexapod_Teleop_Joystick'
+    )
+
+    return LaunchDescription([
+        joy_node,
+        ps4_node,
+        teleop_joystick_node
+    ])

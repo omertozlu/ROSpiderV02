@@ -1,0 +1,80 @@
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
+
+def generate_launch_description():
+    # 1. Paket yolunu al
+    bringup_dir = get_package_share_directory('hexapod_bringup')
+
+    # 2. Argümanları tanımla
+    config_arg = DeclareLaunchArgument(
+        'config', default_value='hexapod',
+        description='Robot konfigürasyon adı'
+    )
+    joy_mapping_arg = DeclareLaunchArgument(
+        'joy_mapping', default_value='joystick',
+        description='Joystick eşleştirme tipi'
+    )
+
+    # 3. Bileşenleri (Components) dahil et
+    # Not: Daha önce seninle oluşturduğumuz dosyaları çağırıyoruz
+    
+    # SES SİSTEMİ
+    sounds_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(bringup_dir, 'launch', 'components', 'sounds.launch.py')
+        )
+    )
+
+    # ANA HAREKET VE KONTROL (hexapod_simple)
+    simple_bringup = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(bringup_dir, 'launch', 'hexapod_simple.launch.py')
+        ),
+        launch_arguments={
+            'config': LaunchConfiguration('config'),
+            'joy_mapping': LaunchConfiguration('joy_mapping')
+        }.items()
+    )
+
+    # IMU (PHIDGETS)
+    imu_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(bringup_dir, 'launch', 'components', 'imu_phidgets.launch.py')
+        )
+    )
+
+    # EKF (LOKALİZASYON)
+    ekf_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(bringup_dir, 'launch', 'components', 'robot_localization_ekf.launch.py')
+        )
+    )
+
+    # DERİNLİK KAMERASI VE LAZERSCAN
+    depth_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(bringup_dir, 'launch', 'components', 'depth_laserscan.launch.py')
+        )
+    )
+
+    # SLAM (RTAB-MAP)
+    rtabmap_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(bringup_dir, 'launch', 'components', 'rtabmap.launch.py')
+        )
+    )
+
+    return LaunchDescription([
+        config_arg,
+        joy_mapping_arg,
+        sounds_launch,
+        simple_bringup,
+        imu_launch,
+        ekf_launch,
+        depth_launch,
+        rtabmap_launch
+    ])

@@ -1,0 +1,27 @@
+from launch import LaunchDescription
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    # 1. Sound Play Sürücü Düğümü
+    # Bu düğüm hoparlör üzerinden ses çalmayı yönetir.
+    # Not: Kaynaktan derlediğimiz audio_common/sound_play içindedir.
+    sound_play_node = Node(
+        package='sound_play',
+        executable='soundplay_node.py', # ROS 2'de executable adı
+        name='sound_play',
+        output='screen'
+    )
+
+    # 2. Hexapod Sounds (Daha önce güncellediğimiz ana paket)
+    # Bu düğüm robotun durumuna göre (ayağa kalkma, bekleme vb.) hangi dosyanın çalınacağını belirler.
+    hexapod_sounds_node = Node(
+        package='hexapod_sound',
+        executable='hexapod_sound',
+        name='Hexapod_Sounds',
+        output='screen'
+    )
+
+    return LaunchDescription([
+        sound_play_node,
+        hexapod_sounds_node
+    ])

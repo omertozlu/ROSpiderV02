@@ -1,0 +1,37 @@
+from launch import LaunchDescription
+from launch_ros.actions import Node, PushRosNamespace
+from launch.actions import GroupAction
+
+def generate_launch_description():
+    # 1. RTAB-Map Görselleştirme Grubu
+    rtabmapviz_group = GroupAction([
+        # Gruba 'rtabmap' namespace'ini ekle
+        PushRosNamespace('rtabmap'),
+
+        # rtabmapviz düğümü
+        Node(
+            package='rtabmap_viz', # ROS 2'de paket adı değişti
+            executable='rtabmap_viz',
+            name='rtabmapviz',
+            output='screen',
+            parameters=[{
+                'frame_id': 'base_link',
+                'subscribe_depth': True,
+                'subscribe_scan': True, # ROS 2'de genellikle 'subscribe_scan' kullanılır
+                'approx_sync': True,
+                'qos_image': 1, # Görüntü kalitesi ayarı
+                'rgb/image_transport': 'compressed',
+            }],
+            remappings=[
+                ('odom', '/odometry/filtered'),
+                ('rgb/image', '/camera/rgb/image_rect_color'),
+                ('rgb/camera_info', '/camera/rgb/camera_info'),
+                ('depth/image', '/camera/depth_registered/image_raw'),
+                ('scan', '/scan')
+            ]
+        ),
+    ])
+
+    return LaunchDescription([
+        rtabmapviz_group
+    ])

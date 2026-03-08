@@ -1,0 +1,26 @@
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    # 1. hexapod_description paket yolunu al
+    description_dir = get_package_share_directory('hexapod_description')
+
+    # 2. RViz konfigürasyon (.rviz) dosyasının tam yolunu belirle
+    # Not: Klasör isminin 'rviz_prefs' olduğundan emin ol
+    rviz_config_path = os.path.join(description_dir, 'rviz_prefs', 'robotViz.rviz')
+
+    # 3. RViz2 Düğümü
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
+        # ROS 1'deki 'args' yerine 'arguments' listesi kullanılır
+        arguments=['-d', rviz_config_path]
+    )
+
+    return LaunchDescription([
+        rviz_node
+    ])

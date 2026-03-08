@@ -1,0 +1,46 @@
+planner_server:
+  ros__parameters:
+    expected_planner_frequency: 20.0
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+      tolerance: 0.1
+      use_astar: false
+      allow_unknown: true
+
+controller_server:
+  ros__parameters:
+    controller_frequency: 20.0
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.001
+    min_theta_velocity_threshold: 0.001
+    controller_plugins: ["FollowPath"]
+
+    FollowPath:
+      plugin: "dwb_core::DWBLocalPlanner"
+      debug_trajectory_details: True
+      min_vel_x: 0.0
+      max_vel_x: 0.092
+      min_vel_y: -0.092 # Holonomik hareket için önemli
+      max_vel_y: 0.092
+      max_vel_theta: 1.0
+      min_speed_xy: 0.0
+      max_speed_xy: 0.092
+      
+      # İvme Limitleri (Senin dosyadaki değerler)
+      acc_lim_x: 0.008464
+      acc_lim_y: 0.008464
+      acc_lim_theta: 0.1089
+      
+      # Hedef Toleransları
+      xy_goal_tolerance: 0.2
+      yaw_goal_tolerance: 0.1
+      latch_xy_goal_tolerance: false
+
+      # Yörünge Puanlama (Critic) Ayarları
+      critics: ["ObstacleFootprint", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
+      ObstacleFootprint.scale: 0.1
+      PathAlign.scale: 0.75
+      GoalAlign.scale: 1.0
+      PathDist.scale: 0.75
+      GoalDist.scale: 1.0

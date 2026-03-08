@@ -1,0 +1,62 @@
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, GroupAction
+from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration
+
+def generate_launch_description():
+    nav_dir = get_package_share_directory('hexapod_navigation')
+    
+    # Parametre dosyalarının yolları
+    planner_param = os.path.join(nav_dir, 'config', 'nav2_planner_params.yaml')
+    local_costmap_param = os.path.join(nav_dir, 'config', 'costmap_local_params.yaml')
+    global_costmap_param = os.path.join(nav_dir, 'config', 'costmap_global_params.yaml')
+
+    # Yaşam döngüsü yönetilecek düğümlerin listesi
+    lifecycle_nodes = ['controller_server', 'planner_server', 'behavior_server', 'bt_navigator']
+
+    return LaunchDescription([
+        # 1. Controller Server (Eski DWA/Local Planner)
+        Node(
+            package='nav2_controller',
+            executable='controller_server',
+            output='screen',
+            parameters=[planner_param, local_costmap_param, {'use_sim_time': True}]
+        ),
+
+        # 2. Planner Server (Eski Global Planner)
+        Node(
+            package='nav2_planner',
+            executable='planner_server',
+            output='screen',
+            parameters=[planner_param, global_costmap_param, {'use_sim_time': True}]
+        ),
+
+        # 3. Behavior Server (Kurtarma davranışları: Dönme, bekleme vb.)
+        Node(
+            package='nav2_behaviors',
+            executable='behavior_server',
+            output='screen',
+            parameters=[planner_param, {'use_sim_time': True}]
+        ),
+
+        # 4. BT Navigator (Navigasyon mantığını yöneten ana beyin)
+        Node(
+            package='nav2_bt_navigator',
+            executable='bt_navigator',
+            output='screen',
+            parameters=[planner_param, {'use_sim_time': True}]
+        ),
+
+        # 5. Lifecycle Manager (Düğümleri sırayla uyarır)
+        Node(
+            package='nav2_lifecycle_manager',
+            executable='lifecycle_manager',
+            name='lifecycle_manager_navigation',
+            output='screen',
+            parameters=[{'use_sim_time': True},
+                        {'autostart': True},
+                        {'node_names': lifecycle_nodes}]
+        ),
+    ])

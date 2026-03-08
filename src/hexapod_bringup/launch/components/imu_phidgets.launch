@@ -1,0 +1,57 @@
+from launch import LaunchDescription
+from launch_ros.actions import ComposableNodeContainer
+from launch_ros.descriptions import ComposableNode
+
+def generate_launch_description():
+    # ROS 2 Bileşen Konteynırı (Eski imu_manager'ın karşılığı)
+    container = ComposableNodeContainer(
+        name='imu_manager',
+        namespace='',
+        package='rclcpp_components',
+        executable='component_container',
+        composable_node_descriptions=[
+            # 1. Phidgets IMU Sürücüsü
+            ComposableNode(
+                package='phidgets_spatial',
+                plugin='phidgets::SpatialRosI',
+                name='phidgets_spatial_node',
+                parameters=[{
+                    'data_interval_ms': 16,  # Eski 'period' parametresi
+                    'frame_id': 'imu_link',
+                    # Pusula düzeltme parametreleri (Float olarak tanımlanmalı)
+                    'cc_mag_field': 0.49062,
+                    'cc_offset0': -1.05668,
+                    'cc_offset1': 1.23766,
+                    'cc_offset2': 0.00607,
+                    'cc_gain0': 1.86684,
+                    'cc_gain1': 2.01338,
+                    'cc_gain2': 2.23447,
+                    'cc_t0': -0.00971,
+                    'cc_t1': -0.03155,
+                    'cc_t2': -0.00969,
+                    'cc_t3': 0.03124,
+                    'cc_t4': -0.03123,
+                    'cc_t5': 0.03376,
+                }]
+            ),
+            # 2. Madgwick IMU Filtresi
+            ComposableNode(
+                package='imu_filter_madgwick',
+                plugin='ImuFilterMadgwick',
+                name='imu_filter_node',
+                parameters=[{
+                    'use_mag': False,
+                    'fixed_frame': 'odom',
+                    'publish_tf': False
+                }],
+                # Veri akışını bağlamak için remapping gerekebilir
+                remappings=[
+                    ('/imu/data_raw', '/imu/data_raw'),
+                    ('/imu/mag', '/imu/mag')
+                ]
+            ),
+        ],
+        output='screen',
+    )
+
+    return LaunchDescription([container])

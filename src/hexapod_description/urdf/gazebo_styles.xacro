@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <gazebo reference="base_link">
+        <material>Gazebo/DarkGrey</material>
+    </gazebo>
+
+    <gazebo reference="right_front_coxa"><material>Gazebo/Black</material></gazebo>
+    <gazebo reference="right_front_femur"><material>Gazebo/Red</material></gazebo>
+    <gazebo reference="right_front_tibia"><material>Gazebo/Black</material></gazebo>
+
+    <gazebo reference="right_mid_coxa"><material>Gazebo/Black</material></gazebo>
+    <gazebo reference="right_mid_femur"><material>Gazebo/Red</material></gazebo>
+    <gazebo reference="right_mid_tibia"><material>Gazebo/Black</material></gazebo>
+
+    <gazebo reference="right_back_coxa"><material>Gazebo/Black</material></gazebo>
+    <gazebo reference="right_back_femur"><material>Gazebo/Red</material></gazebo>
+    <gazebo reference="right_back_tibia"><material>Gazebo/Black</material></gazebo>
+
+    <gazebo reference="left_front_coxa"><material>Gazebo/Black</material></gazebo>
+    <gazebo reference="left_front_femur"><material>Gazebo/Red</material></gazebo>
+    <gazebo reference="left_front_tibia"><material>Gazebo/Black</material></gazebo>
+
+    <gazebo reference="left_mid_coxa"><material>Gazebo/Black</material></gazebo>
+    <gazebo reference="left_mid_femur"><material>Gazebo/Red</material></gazebo>
+    <gazebo reference="left_mid_tibia"><material>Gazebo/Black</material></gazebo>
+
+    <gazebo reference="left_back_coxa"><material>Gazebo/Black</material></gazebo>
+    <gazebo reference="left_back_femur"><material>Gazebo/Red</material></gazebo>
+    <gazebo reference="left_back_tibia"><material>Gazebo/Black</material></gazebo>
+
+</robot>

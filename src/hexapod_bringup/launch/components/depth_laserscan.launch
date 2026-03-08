@@ -1,0 +1,37 @@
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+
+def generate_launch_description():
+    # 1. Paket dizinlerini al
+    openni2_pkg = get_package_share_directory('openni2_camera')
+    
+    # 2. Kamera sürücüsünü dahil et (ROS 2 karşılığı)
+    camera_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(openni2_pkg, 'launch', 'camera.launch.py')
+        ),
+        launch_arguments={
+            'publish_tf': 'false'
+        }.items()
+    )
+
+    # 3. Derinlik görüntüsünü Lazer verisine dönüştüren düğüm
+    # (Eski dosyada eksikti ama isminde geçtiği için ekliyoruz)
+    depth_to_scan = Node(
+        package='depthimage_to_laserscan',
+        executable='depthimage_to_laserscan_node',
+        name='depthimage_to_laserscan',
+        remappings=[('image', '/camera/depth/image_raw'),
+                    ('camera_info', '/camera/depth/camera_info')],
+        parameters=[{'output_frame': 'camera_depth_frame'}]
+    )
+
+    return LaunchDescription([
+        camera_launch,
+        depth_to_scan
+    ])

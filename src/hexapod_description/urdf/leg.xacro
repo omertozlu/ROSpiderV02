@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    
+    <xacro:macro name="hexapod_leg" params="suffix parent x_offset y_offset yaw_offset mirror">
+        
+        <joint name="${suffix}_coxa_joint" type="revolute">
+            <parent link="${parent}"/>
+            <child link="${suffix}_coxa"/>
+            <origin xyz="${x_offset} ${y_offset} 0" rpy="0 0 ${yaw_offset}"/>
+            <axis xyz="0 0 1"/>
+            <limit lower="${coxa_min}" upper="${coxa_max}" effort="5.0" velocity="2.0"/>
+        </joint>
+
+        <link name="${suffix}_coxa">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <mesh filename="package://hexapod_description/meshes/coxa.stl" scale="0.001 0.001 0.001"/>
+                </geometry>
+                <material name="black"/>
+            </visual>
+            <collision>
+                <origin xyz="${coxa_len/2} 0 0" rpy="0 1.5708 0"/>
+                <geometry><cylinder length="${coxa_len}" radius="0.015"/></geometry>
+            </collision>
+            <xacro:inertial_cylinder mass="${coxa_mass}" length="${coxa_len}" radius="0.015">
+                <origin xyz="${coxa_len/2} 0 0" rpy="0 1.5708 0"/>
+            </xacro:inertial_cylinder>
+        </link>
+
+        <joint name="${suffix}_femur_joint" type="revolute">
+            <parent link="${suffix}_coxa"/>
+            <child link="${suffix}_femur"/>
+            <origin xyz="${coxa_len} 0 0" rpy="${-1.5708 * mirror} 0 0"/> 
+            <axis xyz="0 0 1"/>
+            <limit lower="${femur_min}" upper="${femur_max}" effort="10.0" velocity="2.0"/>
+        </joint>
+
+        <link name="${suffix}_femur">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <mesh filename="package://hexapod_description/meshes/femur.stl" scale="0.001 0.001 0.001"/>
+                </geometry>
+                <material name="grey"/>
+            </visual>
+            <collision>
+                <origin xyz="${femur_len/2} 0 0" rpy="0 1.5708 0"/>
+                <geometry><cylinder length="${femur_len}" radius="0.01"/></geometry>
+            </collision>
+            <xacro:inertial_cylinder mass="${femur_mass}" length="${femur_len}" radius="0.01">
+                <origin xyz="${femur_len/2} 0 0" rpy="0 1.5708 0"/>
+            </xacro:inertial_cylinder>
+        </link>
+
+        <joint name="${suffix}_tibia_joint" type="revolute">
+            <parent link="${suffix}_femur"/>
+            <child link="${suffix}_tibia"/>
+            <origin xyz="${femur_len} 0 0" rpy="0 0 0"/>
+            <axis xyz="0 0 1"/>
+            <limit lower="${tibia_min}" upper="${tibia_max}" effort="10.0" velocity="2.0"/>
+        </joint>
+
+        <link name="${suffix}_tibia">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <mesh filename="package://hexapod_description/meshes/tibia.stl" scale="0.001 0.001 0.001"/>
+                </geometry>
+                <material name="black"/>
+            </visual>
+            <collision>
+                <origin xyz="${tibia_len/2} 0 0" rpy="0 1.5708 0"/>
+                <geometry><cylinder length="${tibia_len}" radius="0.005"/></geometry>
+            </collision>
+            <xacro:inertial_cylinder mass="${tibia_mass}" length="${tibia_len}" radius="0.005">
+                <origin xyz="${tibia_len/2} 0 0" rpy="0 1.5708 0"/>
+            </xacro:inertial_cylinder>
+        </link>
+    </xacro:macro>
+
+    <xacro:macro name="leg_ros2_control" params="suffix">
+        <joint name="${suffix}_coxa_joint"><command_interface name="position"/><state_interface name="position"/></joint>
+        <joint name="${suffix}_femur_joint"><command_interface name="position"/><state_interface name="position"/></joint>
+        <joint name="${suffix}_tibia_joint"><command_interface name="position"/><state_interface name="position"/></joint>
+    </xacro:macro>
+</robot>

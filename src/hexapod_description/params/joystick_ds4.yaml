@@ -1,0 +1,22 @@
+/**:
+  ros__parameters:
+    # "triangle" button (Üçgen)
+    STANDUP_BUTTON: 3
+
+    # "square" button (Kare)
+    SITDOWN_BUTTON: 0
+
+    # "L1" button
+    BODY_ROTATION_BUTTON: 4
+
+    # Sol joystick yukarı/aşağı
+    FORWARD_BACKWARD_AXES: 1
+
+    # Sol joystick sağ/sol
+    LEFT_RIGHT_AXES: 0
+
+    # Sağ joystick sağ/sol
+    YAW_ROTATION_AXES: 2
+
+    # Sağ joystick yukarı/aşağı
+    PITCH_ROTATION_AXES: 5

@@ -1,0 +1,46 @@
+services:
+  # --- Base Config (Shared) ---
+  base_config: &base_config
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: ros_gazebo_studio
+    network_mode: host
+    ipc: host
+    privileged: true
+    stdin_open: true
+    tty: true
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - ./src:/root/colcon_ws/src
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - $HOME/.Xauthority:/root/.Xauthority:rw
+
+  # --- Profile: NVIDIA ---
+  # Usage: docker compose --profile nvidia up
+  ros_nvidia:
+    <<: *base_config
+    image: ros_gazebo_nvidia
+    container_name: ros_studio_nvidia
+    profiles: ["nvidia"]
+    runtime: nvidia 
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all,graphics,display
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - TERM=xterm-256color
+
+
+  # --- Profile: Generic (Intel/AMD/WSL) ---
+  # Usage: docker compose --profile generic up
+  ros_generic:
+    <<: *base_config
+    container_name: ros_studio_generic
+    profiles: ["generic"]
+    devices:
+      - /dev/dri:/dev/dri
+    environment:
+      - LIBGL_ALWAYS_SOFTWARE=0

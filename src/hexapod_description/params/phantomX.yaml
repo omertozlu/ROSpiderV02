@@ -1,0 +1,63 @@
+/**:
+  ros__parameters:
+    NON_TELEOP: false
+    MASTER_LOOP_RATE: 500
+    VELOCITY_DIVISION: 0.033
+
+    # Twist Max Values (Radyan)
+    MAX_METERS_PER_SEC: 0.082
+    MAX_RADIANS_PER_SEC: 0.30768  # 17.629 derece
+
+    NUMBER_OF_HEAD_SEGMENTS: 2
+    NUMBER_OF_LEGS: 6
+    NUMBER_OF_LEG_SEGMENTS: 3
+
+    # Initial Coxa Offsets (Radyan)
+    INIT_COXA_ANGLE: [-0.785398, 0.0, 0.785398, -0.785398, 0.0, 0.785398]
+
+    # Mesafeler (Metre)
+    COXA_TO_CENTER_X: [-0.120, 0.0, 0.120, -0.120, 0.0, 0.120]
+    COXA_TO_CENTER_Y: [0.060, 0.100, 0.060, 0.060, 0.100, 0.060]
+    INIT_FOOT_POS_X: [-0.098, 0.0, 0.098, -0.098, 0.0, 0.098]
+    INIT_FOOT_POS_Y: [0.098, 0.141, 0.098, 0.098, 0.141, 0.098]
+    INIT_FOOT_POS_Z: [0.030, 0.030, 0.030, 0.030, 0.030, 0.030]
+
+    # Leg Measurements
+    COXA_LENGTH: 0.052
+    FEMUR_LENGTH: 0.065
+    TIBIA_LENGTH: 0.133
+    TARSUS_LENGTH: 0.00
+
+    # Body FK maximum rotation (Radyan)
+    BODY_MAX_ROLL: 0.139626
+    BODY_MAX_PITCH: 0.139626
+    STANDING_BODY_HEIGHT: 0.09
+
+    # Head FK maximum rotation (Radyan)
+    HEAD_MAX_YAW: 0.959931    # 55 derece
+    HEAD_MAX_PITCH: 0.436332  # 25 derece
+
+    # Auto Leveling (Radyan)
+    MAX_BODY_ROLL_COMP: 0.20944
+    MAX_BODY_PITCH_COMP: 0.20944
+    COMPENSATE_INCREMENT: 0.0001745
+    COMPENSATE_TO_WITHIN: 0.0174533
+
+    # Gait Settings
+    CYCLE_LENGTH: 50
+    LEG_LIFT_HEIGHT: 0.038
+    MAX_LIFT_HEIGHT: 0.050
+    GAIT_STYLE: "TRIPOD"
+    INTERPOLATION_LOOP_RATE: 550
+    PROTOCOL_VERSION: 1 # AX servolar genelde Protokol 1 kullanır
+
+    # Servo Map (Açı ofsetleri Radyana çevrilmiştir)
+    # Örn: 14 deg -> 0.2443 rad | -48 deg -> -0.8377 rad
+    SERVOS:
+      '01': {name: coxa_joint_RR, type: AX, id: 8, ticks: 1024, center: 512, max_radians: 5.2359, sign: -1, offset: 0.0}
+      '02': {name: femur_joint_RR, type: AX, id: 10, ticks: 1024, center: 512, max_radians: 5.2359, sign: -1, offset: 0.2443}
+      '03': {name: tibia_joint_RR, type: AX, id: 12, ticks: 1024, center: 512, max_radians: 5.2359, sign: -1, offset: -0.8377}
+      '04': {name: coxa_joint_RM, type: AX, id: 14, ticks: 1024, center: 512, max_radians: 5.2359, sign: -1, offset: 0.0}
+      '05': {name: femur_joint_RM, type: AX, id: 16, ticks: 1024, center: 512, max_radians: 5.2359, sign: -1, offset: 0.2443}
+      '06': {name: tibia_joint_RM, type: AX, id: 18, ticks: 1024, center: 512, max_radians: 5.2359, sign: -1, offset: -0.8377}
+      # ... (Diğer servolar için de aynı radyan dönüşümünü uygulamalısın)

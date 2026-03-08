@@ -1,0 +1,73 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Selection
+    Name: Selection
+  - Class: rviz_common/ToolProperties
+    Name: Tool Properties
+  - Class: rviz_common/Views
+    Name: Views
+
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Class: rviz_default_plugins/Grid
+      Enabled: true
+      Name: Grid
+      Reference Frame: map
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Name: TF
+      Marker Scale: 0.25
+    - Alpha: 0.75
+      Class: rviz_default_plugins/RobotModel
+      Description Topic:
+        Value: /robot_description
+      Enabled: true
+      Name: RobotModel
+    - Class: rviz_imu_plugin/Imu
+      Enabled: true
+      Name: Imu
+      Topic:
+        Value: /imu/data
+    - Class: rviz_default_plugins/Odometry
+      Enabled: true
+      Name: Odometry
+      Topic:
+        Value: /rtabmap/odometry/synchronized
+    - Class: rviz_default_plugins/Map
+      Alpha: 0.7
+      Enabled: true
+      Name: 2D Map
+      Topic:
+        Value: /rtabmap/grid_map
+    - Class: rtabmap_viz/MapCloud
+      Enabled: true
+      Name: 3D Map
+      Topic:
+        Value: /rtabmap/mapData
+    - Class: rtabmap_viz/MapGraph
+      Enabled: true
+      Name: Path
+      Topic:
+        Value: /rtabmap/mapGraph
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: map
+    Frame Rate: 30
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+    - Class: rviz_default_plugins/Measure
+    - Class: rviz_default_plugins/SetInitialPose
+    - Class: rviz_default_plugins/SetGoal
+      Topic: /goal_pose
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 5.0
+      Name: Current View
+      Target Frame: base_link

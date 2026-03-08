@@ -1,0 +1,60 @@
+/**:
+  ros__parameters:
+    NON_TELEOP: false
+    MASTER_LOOP_RATE: 500
+    VELOCITY_DIVISION: 0.033
+
+    # Twist Max Values (Radyan cinsinden)
+    MAX_METERS_PER_SEC: 0.0723589
+    MAX_RADIANS_PER_SEC: 0.290231 # 16.629 derece
+
+    NUMBER_OF_HEAD_SEGMENTS: 1
+    NUMBER_OF_LEGS: 6
+    NUMBER_OF_LEG_SEGMENTS: 4
+
+    # Initial Coxa Offsets (Radyan)
+    INIT_COXA_ANGLE: [-0.785398, 0.0, 0.785398, -0.785398, 0.0, 0.785398]
+
+    # Mesafeler (Metre - Değişmedi)
+    COXA_TO_CENTER_X: [-0.1778, 0.0, 0.1778, -0.1778, 0.0, 0.1778]
+    COXA_TO_CENTER_Y: [0.0825, 0.13335, 0.0825, 0.0825, 0.13335, 0.0825]
+    INIT_FOOT_POS_X: [-0.13435, 0.0, 0.13435, -0.13435, 0.0, 0.13435]
+    INIT_FOOT_POS_Y: [0.13435, 0.19, 0.13435, 0.13435, 0.19, 0.13435]
+    INIT_FOOT_POS_Z: [0.03565, 0.03565, 0.03565, 0.03565, 0.03565, 0.03565]
+
+    # Leg Measurements
+    COXA_LENGTH: 0.05893
+    FEMUR_LENGTH: 0.10798
+    TIBIA_LENGTH: 0.08774
+    TARSUS_LENGTH: 0.12065
+
+    # Body Rotation Limits (Radyan)
+    BODY_MAX_ROLL: 0.139626   # 8 derece
+    BODY_MAX_PITCH: 0.139626
+    STANDING_BODY_HEIGHT: 0.09
+
+    # Head Limits (Radyan)
+    HEAD_MAX_YAW: 0.279253    # 16 derece
+    HEAD_MAX_PITCH: 0.279253
+
+    # Auto Leveling
+    MAX_BODY_ROLL_COMP: 0.20944
+    MAX_BODY_PITCH_COMP: 0.20944
+    COMPENSATE_INCREMENT: 0.0001745
+    COMPENSATE_TO_WITHIN: 0.0174533
+
+    # Gait Settings
+    CYCLE_LENGTH: 50
+    LEG_LIFT_HEIGHT: 0.04
+    GAIT_STYLE: "TRIPOD"
+    INTERPOLATION_LOOP_RATE: 900
+    PROTOCOL_VERSION: 2
+
+    # Servo Map (Örnek dönüşüm - tüm servolar için offsetler radyana çevrilmeli)
+    # offset: 20 deg -> 0.349066 rad | 40 deg -> 0.698132 rad
+    SERVOS:
+      '01': {name: coxa_joint_RR, type: MX, id: 1, ticks: 4096, center: 2048, max_radians: 6.283185, sign: -1, offset: 0.0}
+      '02': {name: femur_joint_RR, type: MX, id: 2, ticks: 4096, center: 2048, max_radians: 6.283185, sign: 1, offset: 0.349066}
+      '03': {name: tibia_joint_RR, type: MX, id: 3, ticks: 4096, center: 2048, max_radians: 6.283185, sign: -1, offset: 0.349066}
+      '04': {name: tarsus_joint_RR, type: MX, id: 4, ticks: 4096, center: 2048, max_radians: 6.283185, sign: 1, offset: 0.698132}
+      # ... (Diğer servoları da aynı mantıkla eklemelisin)

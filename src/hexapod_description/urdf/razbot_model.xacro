@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="razbot">
+
+    <gazebo>
+        <plugin name="gazebo_ros2_control" filename="libgazebo_ros2_control.so">
+            <parameters>$(find hexapod_description)/config/hexapod_controllers.yaml</parameters>
+        </plugin>
+    </gazebo>
+
+    <xacro:property name="pi" value="3.1415926535897931" />
+    <xacro:property name="body_length_x" value="0.294" />
+    <xacro:property name="body_length_y" value="0.340" />
+    <ros2_control name="GazeboSystem" type="system">
+        <hardware>
+            <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+        </hardware>
+        
+        <joint name="coxa_joint_RR">
+            <command_interface name="position"/>
+            <state_interface name="position"/>
+            <state_interface name="velocity"/>
+        </joint>
+        </ros2_control>
+
+    </robot>
