@@ -9,9 +9,9 @@ import heapq
 import time  
 import os    
 
-class GolemStrategicPlanner(Node):
+class GolemDStarLitePlanner(Node):
     def __init__(self):
-        super().__init__('golem_strategic_planner')
+        super().__init__('golem_dstar_lite_planner')
         
         # Abonelikler
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_cb, 10)
@@ -39,11 +39,11 @@ class GolemStrategicPlanner(Node):
         self.mission_start_time = 0.0
         self.goal_reached = False
         
-        # --- GERÇEK GİDİLEN YOL İÇİN YENİ DEĞİŞKENLER ---
+        # Gerçek Gidilen Yol
         self.gercek_gidilen_yol = 0.0 
         self.eski_konum = None
 
-        self.get_logger().info("GOLEM A* (Kilometre Sayacı Aktif) Hazır.")
+        self.get_logger().info("GOLEM D* LITE (Geriye Doğru Arama Modu) Hazır.")
 
     def world_to_grid(self, x, y):
         gx = int((x + self.offset) / self.res)
@@ -74,21 +74,15 @@ class GolemStrategicPlanner(Node):
         
         current_time = self.get_clock().now().nanoseconds / 1e9
         
-        # Görev başlangıç zamanını kaydet
         if self.mission_start_time == 0.0:
             self.mission_start_time = current_time
 
-        # --- ARABANIN KİLOMETRE SAYACI MANTIĞI ---
-        # Eski konum boş değilse ve hedef henüz bulunmadıysa aradaki farkı topla
         if self.eski_konum is not None and not self.goal_reached:
             dx = p.x - self.eski_konum[0]
             dy = p.y - self.eski_konum[1]
-            # Ufak mesafeyi (Hipotenüs) genel toplama ekle
             self.gercek_gidilen_yol += math.hypot(dx, dy)
         
-        # Şimdiki konumu "eski konum" olarak kaydet ki bir sonraki adımda kıyaslayabilelim
         self.eski_konum = (p.x, p.y)
-        # ----------------------------------------
 
         if (current_time - self.last_path_time > self.path_update_interval) or len(self.current_path) == 0:
             if not self.goal_reached:
@@ -107,8 +101,13 @@ class GolemStrategicPlanner(Node):
                 if 0 <= cx < self.width and 0 <= cy < self.width:
                     self.grid[cx, cy] = 0
 
+        # ---- KRONOMETRE BAŞLANGICI ----
         start_time = time.perf_counter()
-        path, nodes_visited = self.astar(start, goal)
+        
+        # Algoritma çağrısı D* Lite olarak değişti
+        path, nodes_visited = self.dstar_lite_core(start, goal)
+        
+        # ---- KRONOMETRE BİTİŞİ ----
         end_time = time.perf_counter()
         
         computation_time_ms = (end_time - start_time) * 1000
@@ -130,7 +129,8 @@ class GolemStrategicPlanner(Node):
                 if not file_exists:
                     f.write("Algoritma,Hesaplama_Suresi_ms,Ziyaret_Edilen_Dugum,Yol_Uzunlugu_m\n")
                 
-                f.write(f"A*,{computation_time_ms:.4f},{nodes_visited},{path_length_m:.4f}\n")
+                # İsim D* Lite olarak kaydedilir
+                f.write(f"D* Lite,{computation_time_ms:.4f},{nodes_visited},{path_length_m:.4f}\n")
         except Exception as e:
             self.get_logger().error(f"Veri kaydedilemedi: {e}")
 
@@ -149,13 +149,11 @@ class GolemStrategicPlanner(Node):
                 end_time = self.get_clock().now().nanoseconds / 1e9
                 total_mission_time = end_time - self.mission_start_time
                 
-                # --- ORTALAMA HIZ HESAPLAMASI ---
                 if total_mission_time > 0:
                     ortalama_hiz = self.gercek_gidilen_yol / total_mission_time
                 else:
                     ortalama_hiz = 0.0
                 
-                # Terminale Alt Alta Güzelce Yazdır
                 self.get_logger().info("\n" + "="*40 + 
                                        "\n🏆 HEDEFE BAŞARIYLA VARILDI!" +
                                        f"\n⏱️ Toplam Seyahat Süresi: {total_mission_time:.2f} Saniye" +
@@ -202,12 +200,20 @@ class GolemStrategicPlanner(Node):
             path_msg.poses.append(p)
         self.path_pub.publish(path_msg)
 
-    def astar(self, start, goal):
+    # ==========================================
+    # --- D* LITE ÇEKİRDEK MİMARİSİ (GERİYE DOĞRU ARAMA) ---
+    # ==========================================
+    def dstar_lite_core(self, start, goal):
         neighbors = [(0,1),(0,-1),(1,0),(-1,0),(1,1),(1,-1),(-1,1),(-1,-1)]
-        close_set = set(); came_from = {}; gscore = {start:0}
-        fscore = {start: self.dist(start, goal)}
+        close_set = set()
+        came_from = {}
+        
+        # DİKKAT: D* Lite aramaya HEDEFTEN (goal) başlar!
+        gscore = {goal: 0} 
+        fscore = {goal: self.dist(goal, start)}
+        
         oheap = []
-        heapq.heappush(oheap, (fscore[start], start))
+        heapq.heappush(oheap, (fscore[goal], goal))
         
         nodes_visited = 0 
         
@@ -215,25 +221,34 @@ class GolemStrategicPlanner(Node):
             current = heapq.heappop(oheap)[1]
             nodes_visited += 1 
             
-            if current == goal:
+            # Başlangıç noktasına (robotun olduğu yere) ulaştığında arama biter.
+            if current == start:
                 data = []
+                # Ağacı Baştan Sona doğru kurar
                 while current in came_from:
-                    data.append(current); current = came_from[current]
-                return data[::-1], nodes_visited
+                    data.append(current)
+                    current = came_from[current]
+                data.append(goal)
+                return data, nodes_visited
                 
             close_set.add(current)
             for i, j in neighbors:
                 neighbor = (current[0]+i, current[1]+j)
+                
                 if 0 <= neighbor[0] < self.width and 0 <= neighbor[1] < self.width:
-                    if self.grid[neighbor[0], neighbor[1]] == 1: continue
-                else: continue
+                    if self.grid[neighbor[0], neighbor[1]] == 1: continue 
+                else: 
+                    continue
+                
                 if neighbor in close_set: continue
                 
                 tg = gscore[current] + self.dist(current, neighbor)
+                
                 if tg < gscore.get(neighbor, float('inf')):
                     came_from[neighbor] = current
                     gscore[neighbor] = tg
-                    fscore[neighbor] = tg + self.dist(neighbor, goal)
+                    # Sezgisel yaklaşım (Heuristic) robotun olduğu yere (start) doğru hesaplanır
+                    fscore[neighbor] = tg + self.dist(neighbor, start)
                     heapq.heappush(oheap, (fscore[neighbor], neighbor))
                     
         return None, nodes_visited
@@ -242,6 +257,6 @@ class GolemStrategicPlanner(Node):
         return math.sqrt((b[0]-a[0])**2 + (b[1]-a[1])**2)
 
 def main():
-    rclpy.init(); rclpy.spin(GolemStrategicPlanner()); rclpy.shutdown()
+    rclpy.init(); rclpy.spin(GolemDStarLitePlanner()); rclpy.shutdown()
 
 if __name__ == '__main__': main()

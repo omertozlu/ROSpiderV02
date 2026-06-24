@@ -9,6 +9,8 @@ from tf2_ros import TransformBroadcaster
 import math
 import numpy as np
 import random
+import time  
+import os    
 
 class TreeNode:
     def __init__(self, x, y):
@@ -21,23 +23,17 @@ class GolemRRTStarVisual(Node):
     def __init__(self):
         super().__init__('golem_rrt_star_visual')
         
-        # --- EKLENECEK KRİTİK SATIR ---
-        # Bu satır node'u zorla Gazebo saatine (Sim Time) geçirir
         self.set_parameters([rclpy.parameter.Parameter('use_sim_time', rclpy.Parameter.Type.BOOL, True)])
         
-        # --- ABONELİKLER ---
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_cb, 10)
         self.scan_sub = self.create_subscription(LaserScan, '/scan', self.scan_cb, 10)
         
-        # --- YAYINCILAR ---
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.path_pub = self.create_publisher(Path, '/planned_path', 10)
         self.tree_pub = self.create_publisher(Marker, '/rrt_tree', 10)
         
-        # --- TF BROADCASTER (EKSİK OLAN PARÇA BUYDU) ---
         self.tf_broadcaster = TransformBroadcaster(self)
 
-        # Harita ve Robot Ayarları
         self.res = 0.1
         self.width = 200 
         self.grid = np.zeros((self.width, self.width))
@@ -45,20 +41,25 @@ class GolemRRTStarVisual(Node):
 
         self.inflation_cells = 5
         self.max_view_dist = 6.0
-        self.target = (4.0, 4.0) # Hedef Noktası
+        self.target = (4.0, 4.0) 
         self.pos = [0.0, 0.0, 0.0] 
         
         self.last_path_time = 0.0
         self.path_update_interval = 2.0
         self.current_path = []
 
-        # RRT* Parametreleri
         self.max_iter = 2000       
         self.step_size = 0.4      
         self.search_radius = 1.0  
         self.goal_sample_rate = 5 
 
-        self.get_logger().info("GOLEM RRT* (Görselleştirme Modu - ODOM FIX) Hazır.")
+        # --- YENİ METRİKLER VE SAYAÇLAR ---
+        self.mission_start_time = 0.0
+        self.goal_reached = False
+        self.gercek_gidilen_yol = 0.0 
+        self.eski_konum = None
+
+        self.get_logger().info("GOLEM RRT* (Kapsamlı Ölçüm ve Kilometre Sayacı Aktif) Hazır.")
 
     def world_to_grid(self, x, y):
         gx = int((x + self.offset) / self.res)
@@ -81,11 +82,9 @@ class GolemRRTStarVisual(Node):
             angle += msg.angle_increment
 
     def odom_cb(self, m):
-        # 1. Konum Verisini Al
         p = m.pose.pose.position
         q = m.pose.pose.orientation
         
-        # 2. TF YAYINI (RViz'de Odom Gözüksün Diye)
         t = TransformStamped()
         t.header.stamp = self.get_clock().now().to_msg()
         t.header.frame_id = 'odom'
@@ -101,21 +100,33 @@ class GolemRRTStarVisual(Node):
 
         self.tf_broadcaster.sendTransform(t)
 
-        # 3. Navigasyon Mantığı
         siny_cosp = 2 * (q.w * q.z + q.x * q.y)
         cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z)
         yaw = math.atan2(siny_cosp, cosy_cosp)
         self.pos = [p.x, p.y, yaw]
         
         current_time = self.get_clock().now().nanoseconds / 1e9
+        
+        # --- KİLOMETRE SAYACI MANTIĞI ---
+        if self.mission_start_time == 0.0:
+            self.mission_start_time = current_time
+
+        if self.eski_konum is not None and not self.goal_reached:
+            dx = p.x - self.eski_konum[0]
+            dy = p.y - self.eski_konum[1]
+            self.gercek_gidilen_yol += math.hypot(dx, dy)
+        
+        self.eski_konum = (p.x, p.y)
+        # --------------------------------
+
         if (current_time - self.last_path_time > self.path_update_interval) or len(self.current_path) == 0:
-            self.replan()
+            if not self.goal_reached:
+                self.replan()
             self.last_path_time = current_time
         
         self.execute_drive()
 
     def replan(self):
-        # Robot etrafını temizle
         start_grid = self.world_to_grid(self.pos[0], self.pos[1])
         for i in range(-3, 4):
             for j in range(-3, 4):
@@ -123,15 +134,48 @@ class GolemRRTStarVisual(Node):
                 if 0 <= cx < self.width and 0 <= cy < self.width:
                     self.grid[cx, cy] = 0
 
-        # RRT* Çalıştır
+        # ---- KRONOMETRE BAŞLANGICI ----
+        start_time = time.perf_counter()
+
         path, node_list = self.rrt_star(self.pos[:2], self.target)
         
-        # Ağacı yayınla
+        # ---- KRONOMETRE BİTİŞİ ----
+        end_time = time.perf_counter()
+        computation_time_ms = (end_time - start_time) * 1000
+        
+        # RRT* Ağacındaki toplam düğüm sayısını al
+        nodes_visited = len(node_list)
+
+        # Planlanan rota uzunluğunu hesapla (metre)
+        path_length_m = 0.0
+        if path and len(path) > 1:
+            for i in range(1, len(path)):
+                dx = path[i][0] - path[i-1][0]
+                dy = path[i][1] - path[i-1][1]
+                path_length_m += math.hypot(dx, dy) * self.res
+
+        self.get_logger().info(f"Süre: {computation_time_ms:.2f}ms | Ağaçtaki Düğüm: {nodes_visited} | Planlanan Rota: {path_length_m:.2f}m")
+
+        # --- CSV KAYIT ---
+        try:
+            file_name = 'algoritma_karsilastirma.csv'
+            file_exists = os.path.isfile(file_name)
+            
+            with open(file_name, 'a') as f:
+                if not file_exists:
+                    f.write("Algoritma,Hesaplama_Suresi_ms,Ziyaret_Edilen_Dugum,Yol_Uzunlugu_m\n")
+                
+                # RRT* olarak kaydediyoruz
+                f.write(f"RRT*,{computation_time_ms:.4f},{nodes_visited},{path_length_m:.4f}\n")
+        except Exception as e:
+            self.get_logger().error(f"Veri kaydedilemedi: {e}")
+
+        # Görselleştirme
         self.publish_tree(node_list)
 
         if path:
             self.current_path = path
-            self.publish_path(path) # Hata veren satır artık çalışacak
+            self.publish_path(path) 
         else:
             self.get_logger().warn("RRT* Rota Bulamadı!")
 
@@ -189,14 +233,12 @@ class GolemRRTStarVisual(Node):
 
         return None, node_list
 
-    # --- EKSİK OLAN publish_path FONKSİYONU ---
     def publish_path(self, path):
         path_msg = Path()
-        path_msg.header.frame_id = "odom"  # ODOM referansına göre çiz
+        path_msg.header.frame_id = "odom" 
         
         for pt in path:
             p = PoseStamped()
-            # Grid'den Dünya koordinatına çevir
             wx = (pt[0] * self.res) - self.offset
             wy = (pt[1] * self.res) - self.offset
             
@@ -206,12 +248,11 @@ class GolemRRTStarVisual(Node):
             
         self.path_pub.publish(path_msg)
 
-    # --- publish_tree FONKSİYONU ---
     def publish_tree(self, node_list):
         if not node_list: return
         
         marker = Marker()
-        marker.header.frame_id = "odom" # ODOM referansına göre çiz
+        marker.header.frame_id = "odom" 
         marker.header.stamp = self.get_clock().now().to_msg()
         marker.ns = "rrt_tree"
         marker.id = 0
@@ -230,7 +271,6 @@ class GolemRRTStarVisual(Node):
         
         self.tree_pub.publish(marker)
 
-    # --- DİĞER FONKSİYONLAR ---
     def get_nearest_node_index(self, node_list, rnd):
         dlist = [(node.x - rnd[0])**2 + (node.y - rnd[1])**2 for node in node_list]
         return dlist.index(min(dlist))
@@ -272,8 +312,26 @@ class GolemRRTStarVisual(Node):
     def execute_drive(self):
         t = Twist()
         dist_to_goal = math.sqrt((self.target[0]-self.pos[0])**2 + (self.target[1]-self.pos[1])**2)
+        
         if dist_to_goal < 0.4:
-            self.get_logger().info("HEDEFE VARILDI!")
+            if not self.goal_reached:
+                end_time = self.get_clock().now().nanoseconds / 1e9
+                total_mission_time = end_time - self.mission_start_time
+                
+                # --- ORTALAMA HIZ HESAPLAMASI ---
+                if total_mission_time > 0:
+                    ortalama_hiz = self.gercek_gidilen_yol / total_mission_time
+                else:
+                    ortalama_hiz = 0.0
+                
+                self.get_logger().info("\n" + "="*40 + 
+                                       "\n🏆 HEDEFE BAŞARIYLA VARILDI!" +
+                                       f"\n⏱️ Toplam Seyahat Süresi: {total_mission_time:.2f} Saniye" +
+                                       f"\n📏 Gerçekte Gidilen Yol : {self.gercek_gidilen_yol:.2f} Metre" +
+                                       f"\n🚀 Ortalama Hareket Hızı: {ortalama_hiz:.3f} m/s\n" +
+                                       "="*40)
+                self.goal_reached = True
+
             t.linear.x = 0.0; t.angular.z = 0.0
             self.cmd_pub.publish(t)
             return
